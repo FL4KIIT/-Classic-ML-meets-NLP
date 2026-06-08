@@ -103,11 +103,30 @@ RE_NOISE = re.compile(r'http\S+|www\S+|https\S+|<.*?>|\d+|[^\w\s]')
 RE_SPACE = re.compile(r'\s+')
 stemmer = SnowballStemmer("russian")
 
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+
+# Русские стоп-слова
+russian_stopwords = set(stopwords.words('russian'))
+
+# Можно добавить свои специфичные для новостей стоп-слова (опционально)
+extra_stopwords = {'это', 'также', 'который', 'которая', 'которое', 'которые'}
+russian_stopwords.update(extra_stopwords)
+
 def preprocess_text(text: str) -> str:
     text = text.lower()
     text = RE_NOISE.sub(' ', text)
     text = RE_SPACE.sub(' ', text).strip()
-    return ' '.join(stemmer.stem(w) for w in text.split() if len(w) > 2)
+    # Стемминг и фильтрация по длине и стоп-словам
+    tokens = []
+    for w in text.split():
+        if len(w) <= 2:
+            continue
+        if w in russian_stopwords:
+            continue
+        tokens.append(stemmer.stem(w))
+    return ' '.join(tokens)
 
 print(" Предобработка текста...")
 df_sampled['clean_text'] = df_sampled['full_text'].apply(preprocess_text)
